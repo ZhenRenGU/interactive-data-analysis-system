@@ -15,34 +15,42 @@
 - **数据处理**: Pandas, NumPy
 - **机器学习**: Scikit-learn
 - **数据可视化**: Matplotlib, Plotly
-- **前端技术**: HTML5, CSS3, JavaScript, Bootstrap
+- **前端技术**: Vue.js, Element-UI
 
 ## 项目结构
 ```
 dataanalysis/
-  ├── app.py           # Flask主应用
-  ├── static/          # 静态文件
-  │   ├── css/         # 样式文件
-  │   ├── js/          # JavaScript文件
-  │   └── uploads/     # 上传文件临时存储
-  ├── templates/       # HTML模板
-  │   ├── index.html   # 主页
-  │   ├── analysis.html # 分析页面
-  │   └── result.html  # 结果页面
-  ├── models/          # 机器学习模型
-  ├── utils/           # 工具函数
-  │   ├── data_clean.py # 数据清洗
-  │   ├── data_viz.py  # 数据可视化
-  │   └── ml_models.py # 机器学习模型封装
-  ├── tests/           # 测试代码
-  ├── requirements.txt # 依赖包
-  └── README.md        # 项目说明
+  ├── backend/             # 后端目录
+  │   ├── app.py           # Flask主应用
+  │   ├── static/          # 静态文件
+  │   │   └── uploads/     # 上传文件临时存储
+  │   ├── models/          # 机器学习模型
+  │   └── utils/           # 工具函数
+  │       ├── data_clean.py # 数据清洗
+  │       ├── data_viz.py   # 数据可视化
+  │       └── ml_models.py  # 机器学习模型封装
+  ├── frontend/            # 前端目录
+  │   ├── public/          # 公共资源
+  │   ├── src/             # 源代码
+  │   │   ├── assets/      # 静态资源
+  │   │   ├── components/  # Vue组件
+  │   │   ├── views/       # 页面视图
+  │   │   ├── router/      # 路由配置
+  │   │   ├── store/       # 状态管理
+  │   │   ├── App.vue      # 主组件
+  │   │   └── main.js      # 入口文件
+  │   ├── package.json     # 前端依赖配置
+  │   └── vue.config.js    # Vue配置文件
+  ├── tests/               # 测试代码
+  ├── requirements.txt     # 后端依赖包
+  └── README.md            # 项目说明
 ```
 
 ## 安装与使用
 ### 环境要求
-- Python 3.8+
-- pip包管理工具
+- Python 3.13.0
+- Node.js 14+
+- npm包管理工具
 
 ### 安装步骤
 1. 克隆仓库到本地
@@ -51,18 +59,30 @@ git clone https://github.com/yourusername/dataanalysis.git
 cd dataanalysis
 ```
 
-2. 安装依赖
+2. 安装后端依赖
 ```bash
 pip install -r requirements.txt
 ```
 
-3. 启动应用
+3. 安装前端依赖
 ```bash
+cd frontend
+npm install
+```
+
+4. 启动前端开发服务器
+```bash
+npm run serve
+```
+
+5. 启动后端服务
+```bash
+cd ../backend
 python app.py
 ```
 
-4. 访问应用
-打开浏览器，访问 http://localhost:5000
+6. 访问应用
+打开浏览器，访问 http://localhost:8080
 
 ### 使用流程
 1. 在首页点击"上传数据"按钮，选择CSV或Excel文件
@@ -100,9 +120,9 @@ python app.py
 ## 开发计划
 ### 第一天：环境搭建与基础模块
 1. 创建项目结构和文件
-2. 实现基本Flask应用框架
-3. 开发文件上传和数据预览功能
-4. 实现基础数据清洗功能
+2. 实现基本Flask后端API框架
+3. 搭建Vue.js前端基础框架
+4. 开发文件上传和数据预览功能
 
 ### 第二天：分析与可视化
 1. 开发数据可视化功能（至少3种图表类型）
