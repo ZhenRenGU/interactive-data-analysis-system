@@ -3,7 +3,7 @@
       <h1>数据预览: {{ filename }}</h1>
       
       <div v-if="loading" class="loading">
-        <el-spinner></el-spinner>
+        <el-spinner-loading></el-spinner-loading>
         <p>正在加载数据...</p>
       </div>
       
