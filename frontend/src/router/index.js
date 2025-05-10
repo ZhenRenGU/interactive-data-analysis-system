@@ -24,16 +24,16 @@ const routes = [
   
    // 数据分析
    {
-    path: '/analysis/:filename',
-    name: 'Analysis',
-    component: () => import('../views/Analysis.vue')
+    path: '/analyze/:filename',
+    name: 'Analyze',
+    component: () => import('../views/Analyze.vue')
    },
 
    // 数据可视化
    {
-    path: 'visuallize/:filename',
-    name: 'Visuallize',
-    component: () => import('../views/Visuallize.vue')
+    path: '/visualize/:filename',
+    name: 'Visualize',
+    component: () => import('../views/Visualize.vue')
    }
 
 ]

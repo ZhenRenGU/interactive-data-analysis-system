@@ -54,7 +54,7 @@ def handle_missing_values(df,strategy,columns=None,fill_value=None):
 
 
 #检测异常值
-def detect_outliners(df,method='zscore',columns=None,threshold=3):
+def detect_outliers(df,method='zscore',columns=None,threshold=3):
     """
     检测异常值
     
@@ -82,18 +82,18 @@ def detect_outliners(df,method='zscore',columns=None,threshold=3):
                 #计算z-score
                 z_scores = np.abs((df[col] - df[col].mean()) / df[col].std())
                 #找到异常值
-                outliers[col]=df[z_scores>threshold].index.tolist()
+                outliers[col]=df.index[z_scores>threshold].tolist()
             elif method == 'iqr':
                 #计算四分位数
                 q1=df[col].quantile(0.25)
                 q3=df[col].quantile(0.75)
                 iqr=q3-q1
                 #找到异常值
-                outliers[col]=df[(df[col]<q1-1.5*iqr) | (df[col]>q3+1.5*iqr)].index.tolist()
+                outliers[col]=df.index[(df[col]<q1-1.5*iqr) | (df[col]>q3+1.5*iqr)].tolist()
     return outliers
 
 #删除异常值
-def remove_outliners(df,outliers):
+def remove_outliers(df,outliers):
     """
     删除异常值
     

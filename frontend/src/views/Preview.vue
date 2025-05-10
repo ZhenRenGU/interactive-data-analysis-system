@@ -67,44 +67,44 @@ export default {
 },
 
 // 计算缺失值数据
-computed: {
-    missingValuesData() {
-      if (!this.dataInfo.missing_values || !this.dataInfo.rows) return []
-      
-      return Object.entries(this.dataInfo.missing_values).map(([column, count]) => ({
-        column,
-        count,
-        percentage: ((count / this.dataInfo.rows) * 100).toFixed(2) + '%'
-      }))
-    }
+    computed: {
+        missingValuesData() {
+            if (!this.dataInfo.missing_values || !this.dataInfo.rows) return []
+            
+            return Object.entries(this.dataInfo.missing_values).map(([column, count]) => ({
+                column,
+                count,
+                percentage: ((count / this.dataInfo.rows) * 100).toFixed(2) + '%'
+            }))
+        }
   },
 
   // 获取数据预览
-  created() {
-    this.fetchPreviewData()
-  },
+    created() {
+        this.fetchPreviewData()
+    },
 
   // 方法
-  methods: {
-    // 获取数据预览
-    fetchPreviewData() {
-      this.loading = true
-      axios.get(`http://localhost:5000/api/preview/${this.filename}`)
-        .then(response => {
-          this.dataInfo = response.data
-          this.loading = false
-        })
-        .catch(error => {
-          this.$message.error('获取数据预览失败: ' + error.message)
-          this.loading = false
-        })
-    },
-    goToAnalyze() {
-      this.$router.push(`/analyze/${this.filename}`)
-    },
-    goBack() {
-      this.$router.push('/')
-    }
+     methods: {
+        // 获取数据预览
+        fetchPreviewData() {
+            this.loading = true
+            axios.get(`http://localhost:5000/api/preview/${this.filename}`)
+                .then(response => {
+                this.dataInfo = response.data.info
+                this.loading = false
+                })
+                .catch(error => {
+                this.$message.error('获取数据预览失败: ' + error.message)
+                this.loading = false
+                })
+        },
+        goToAnalyze() {
+            this.$router.push(`/analyze/${this.filename}`)
+        },
+        goBack() {
+        this.$router.push('/')
+        }
   }
 }
 </script>
