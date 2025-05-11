@@ -1,11 +1,9 @@
 <template>
-    <div class="preview">
-      <h1>数据预览: {{ filename }}</h1>
-      
-      <div v-if="loading" class="loading">
-        <el-spinner-loading></el-spinner-loading>
-        <p>正在加载数据...</p>
-      </div>
+  <div class="preview">
+    <h1>数据预览: {{ filename }}</h1>
+    
+    <div v-loading="loading" class="loading-container">
+      <p v-if="loading">正在加载数据...</p>
       
       <div v-else>
         <div class="info-section">
@@ -43,69 +41,63 @@
         </div>
       </div>
     </div>
-  </template>
+  </div>
+</template>
 
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import axios from 'axios'
 
-// 获取文件信息
-export default {
-    name: 'Preview',
-    data() {
-        return {
-            filename: this.$route.params.filename,
-            dataInfo: {
-                rows: 0,
-                columns: 0,
-                column_names: [],
-                dtypes: {},
-                missing_values: {},
-                preview: []
-            },
-            loading: true
-        }
-},
+const router = useRouter()
+const route = useRoute()
+const filename = ref(route.params.filename)
+const loading = ref(true)
+const dataInfo = ref({
+  rows: 0,
+  columns: 0,
+  column_names: [],
+  dtypes: {},
+  missing_values: {},
+  preview: []
+})
 
 // 计算缺失值数据
-    computed: {
-        missingValuesData() {
-            if (!this.dataInfo.missing_values || !this.dataInfo.rows) return []
-            
-            return Object.entries(this.dataInfo.missing_values).map(([column, count]) => ({
-                column,
-                count,
-                percentage: ((count / this.dataInfo.rows) * 100).toFixed(2) + '%'
-            }))
-        }
-  },
+const missingValuesData = computed(() => {
+  if (!dataInfo.value.missing_values || !dataInfo.value.rows) return []
+  
+  return Object.entries(dataInfo.value.missing_values).map(([column, count]) => ({
+    column,
+    count,
+    percentage: ((count / dataInfo.value.rows) * 100).toFixed(2) + '%'
+  }))
+})
 
-  // 获取数据预览
-    created() {
-        this.fetchPreviewData()
-    },
+onMounted(() => {
+  fetchPreviewData()
+})
 
-  // 方法
-     methods: {
-        // 获取数据预览
-        fetchPreviewData() {
-            this.loading = true
-            axios.get(`http://localhost:5000/api/preview/${this.filename}`)
-                .then(response => {
-                this.dataInfo = response.data.info
-                this.loading = false
-                })
-                .catch(error => {
-                this.$message.error('获取数据预览失败: ' + error.message)
-                this.loading = false
-                })
-        },
-        goToAnalyze() {
-            this.$router.push(`/analyze/${this.filename}`)
-        },
-        goBack() {
-        this.$router.push('/')
-        }
-  }
+// 获取数据预览
+const fetchPreviewData = () => {
+  loading.value = true
+  axios.get(`http://localhost:5000/api/preview/${filename.value}`)
+    .then(response => {
+      dataInfo.value = response.data.info
+      loading.value = false
+    })
+    .catch(error => {
+      ElMessage.error('获取数据预览失败: ' + error.message)
+      loading.value = false
+    })
+}
+
+const goToAnalyze = () => {
+  router.push(`/analyze/${filename.value}`)
+}
+
+const goBack = () => {
+  router.push('/')
 }
 </script>
 
@@ -121,7 +113,7 @@ export default {
 .actions {
   margin-top: 30px;
 }
-.loading {
+.loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -14,19 +14,16 @@
   </div>
 </template>
 
-<script>
-export default {
-  name: 'Analyze',
-  data() {
-    return {
-      filename: this.$route.params.filename
-    }
-  },
-  methods: {
-    goBack() {
-      this.$router.push('/preview/' + this.filename)
-    }
-  }
+<script setup>
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+
+const router = useRouter()
+const route = useRoute()
+const filename = ref(route.params.filename)
+
+const goBack = () => {
+  router.push('/preview/' + filename.value)
 }
 </script>
 

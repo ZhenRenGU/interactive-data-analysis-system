@@ -117,7 +117,7 @@ def remove_outliers(df,outliers):
     df_clean=df_clean.drop(index=list(set(all_indices)))
 
     #打印删除的行数用于调试
-    print(f"删除了 {len(set(all_indices))} 行，\
+    print(f"删除了 {len(set(all_indices))} 行,
           占比为{len(set(all_indices)) / len(df):.1%}).")
           
     #返回处理后的数据集
