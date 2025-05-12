@@ -31,8 +31,8 @@ def create_line_chart(df, x_column, y_columns, title="折线图", xaxis_title="X
     for col in y_columns:
         fig.add_trace(
             go.Scatter(
-                x=df[x_column],
-                y=df[col],
+                x=df[x_column].tolist(),
+                y=df[col].tolist(),
                 mode='lines+markers',
                 name=col
             )

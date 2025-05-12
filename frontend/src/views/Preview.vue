@@ -37,6 +37,7 @@
         
         <div class="actions">
           <el-button type="primary" @click="goToAnalyze">进行数据分析</el-button>
+          <el-button type="success" @click="goToVisualize">数据可视化</el-button>
           <el-button @click="goBack">返回</el-button>
         </div>
       </div>
@@ -94,6 +95,10 @@ const fetchPreviewData = () => {
 
 const goToAnalyze = () => {
   router.push(`/analyze/${filename.value}`)
+}
+
+const goToVisualize = () => {
+  router.push(`/visualize/${filename.value}`)
 }
 
 const goBack = () => {
