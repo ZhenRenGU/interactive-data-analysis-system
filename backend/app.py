@@ -4,6 +4,7 @@ import os
 import pandas as pd
 from werkzeug.utils import secure_filename
 import json
+from utils.data_viz import create_line_chart
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
 
@@ -106,6 +107,64 @@ def get_files():
     return jsonify({
         'success': True,
         'files': files
+    }), 200
+
+
+# 在app.py中添加数据可视化API接口
+@app.route('/api/visualize/line', methods=['POST'])
+def visualize_line():
+    # 获取请求数据
+    data = request.get_json()
+    
+    # 验证必要参数
+    if not all(key in data for key in ['filename', 'x_column', 'y_columns']):
+        return jsonify({'error': '缺少必要参数'}), 400
+    
+    # 获取参数
+    filename = data['filename']
+    x_column = data['x_column']
+    y_columns = data['y_columns']
+    title = data.get('title', '折线图')
+    xaxis_title = data.get('xaxis_title', 'X轴')
+    yaxis_title = data.get('yaxis_title', 'Y轴')
+    
+    # 获取文件路径
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    # 判断文件是否存在
+    if not os.path.exists(file_path):
+        return jsonify({'error': '文件不存在'}), 404
+    
+    # 根据文件类型读取数据
+    if filename.endswith('.csv'):
+        df = pd.read_csv(file_path)
+    elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+        df = pd.read_excel(file_path)
+    else:
+        return jsonify({'error': '文件格式不支持'}), 400
+    
+    # 验证列是否存在
+    if x_column not in df.columns:
+        return jsonify({'error': f'列 {x_column} 不存在'}), 400
+    
+    for col in y_columns:
+        if col not in df.columns:
+            return jsonify({'error': f'列 {col} 不存在'}), 400
+    
+    # 创建折线图
+    chart_data = create_line_chart(
+        df, 
+        x_column, 
+        y_columns, 
+        title, 
+        xaxis_title, 
+        yaxis_title
+    )
+    
+    # 返回图表数据
+    return jsonify({
+        'success': True,
+        'chart_data': chart_data
     }), 200
 
 
