@@ -5,6 +5,8 @@ import pandas as pd
 from werkzeug.utils import secure_filename
 import json
 from utils.data_viz import create_line_chart
+from utils.ml_models import linear_regression
+
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
 
@@ -166,6 +168,65 @@ def visualize_line():
         'success': True,
         'chart_data': chart_data
     }), 200
+
+
+# 添加线性回归API接口
+@app.route('/api/ml/linear-regression', methods=['POST'])
+def apply_linear_regression():
+    # 获取请求数据
+    data = request.get_json()
+    
+    # 验证必要参数
+    if not all(key in data for key in ['filename', 'features', 'target']):
+        return jsonify({'error': '缺少必要参数'}), 400
+    
+    # 获取参数
+    filename = data['filename']
+    features = data['features']
+    target = data['target']
+    test_size = data.get('test_size', 0.2)
+    random_state = data.get('random_state', 42)
+    
+    # 获取文件路径
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    # 判断文件是否存在
+    if not os.path.exists(file_path):
+        return jsonify({'error': '文件不存在'}), 404
+    
+    # 根据文件类型读取数据
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file_path)
+        elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+            df = pd.read_excel(file_path)
+        else:
+            return jsonify({'error': '文件格式不支持'}), 400
+    except Exception as e:
+        return jsonify({'error': f'读取文件错误: {str(e)}'}), 500
+    
+    # 验证列是否存在
+    if target not in df.columns:
+        return jsonify({'error': f'目标列 {target} 不存在'}), 400
+    
+    for feature in features:
+        if feature not in df.columns:
+            return jsonify({'error': f'特征列 {feature} 不存在'}), 400
+    
+    # 检查特征和目标列的数据类型是否为数值类型
+    for col in features + [target]:
+        if not pd.api.types.is_numeric_dtype(df[col]):
+            return jsonify({'error': f'列 {col} 不是数值类型'}), 400
+    
+    # 执行线性回归
+    try:
+        result = linear_regression(df, features, target, test_size, random_state)
+        return jsonify({
+            'success': True,
+            'result': result
+        }), 200
+    except Exception as e:
+        return jsonify({'error': f'线性回归分析错误: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
