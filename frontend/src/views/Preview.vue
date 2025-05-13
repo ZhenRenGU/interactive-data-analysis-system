@@ -23,6 +23,80 @@
           </el-table>
         </div>
         
+        <!-- 数据清洗选项 -->
+        <div class="clean-options-section">
+          <h2>数据清洗选项</h2>
+          <el-collapse v-model="activeCollapse">
+            <!-- 缺失值处理 -->
+            <el-collapse-item title="缺失值处理" name="missing">
+              <el-form :model="cleanOptions.missingValues" label-width="120px">
+                <el-form-item label="处理策略">
+                  <el-select v-model="cleanOptions.missingValues.strategy" placeholder="选择处理策略">
+                    <el-option label="删除缺失值" value="drop"></el-option>
+                    <el-option label="均值填充" value="mean"></el-option>
+                    <el-option label="中位数填充" value="median"></el-option>
+                    <el-option label="众数填充" value="mode"></el-option>
+                    <el-option label="固定值填充" value="value"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item v-if="cleanOptions.missingValues.strategy === 'value'" label="填充值">
+                  <el-input v-model="cleanOptions.missingValues.fillValue" placeholder="请输入填充值"></el-input>
+                </el-form-item>
+                <el-form-item label="应用的列">
+                  <el-select v-model="cleanOptions.missingValues.columns" multiple placeholder="选择要处理的列(默认全部)">
+                    <el-option 
+                      v-for="column in dataInfo.column_names" 
+                      :key="column" 
+                      :label="column" 
+                      :value="column">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-form>
+            </el-collapse-item>
+            
+            <!-- 异常值处理 -->
+            <el-collapse-item title="异常值处理" name="outliers">
+              <el-form :model="cleanOptions.outliers" label-width="120px">
+                <el-form-item label="检测方法">
+                  <el-select v-model="cleanOptions.outliers.method" placeholder="选择检测方法">
+                    <el-option label="Z-Score法" value="zscore"></el-option>
+                    <el-option label="IQR法" value="iqr"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item v-if="cleanOptions.outliers.method === 'zscore'" label="阈值">
+                  <el-input-number v-model="cleanOptions.outliers.threshold" :min="1" :max="5" :step="0.5"></el-input-number>
+                </el-form-item>
+                <el-form-item label="是否删除异常值">
+                  <el-switch v-model="cleanOptions.outliers.remove"></el-switch>
+                </el-form-item>
+              </el-form>
+            </el-collapse-item>
+            
+            <!-- 数据标准化 -->
+            <el-collapse-item title="数据标准化" name="normalize">
+              <el-form :model="cleanOptions.normalize" label-width="120px">
+                <el-form-item label="标准化方法">
+                  <el-select v-model="cleanOptions.normalize.method" placeholder="选择标准化方法">
+                    <el-option label="最小最大归一化" value="minmax"></el-option>
+                    <el-option label="Z-Score标准化" value="zscore"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="应用的列">
+                  <el-select v-model="cleanOptions.normalize.columns" multiple placeholder="选择要处理的列(默认所有数值列)">
+                    <el-option 
+                      v-for="column in numericColumns" 
+                      :key="column" 
+                      :label="column" 
+                      :value="column">
+                    </el-option>
+                  </el-select>
+                </el-form-item>
+              </el-form>
+            </el-collapse-item>
+          </el-collapse>
+        </div>
+        
         <div class="data-preview-section">
           <h2>数据预览</h2>
           <el-table :data="dataInfo.preview" style="width: 100%">
@@ -38,6 +112,15 @@
         <div class="actions">
           <el-button type="primary" @click="goToAnalyze">进行数据分析</el-button>
           <el-button type="success" @click="goToVisualize">数据可视化</el-button>
+          <el-dropdown @command="handleExport" split-button type="warning">
+            导出数据
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="csv">导出为CSV</el-dropdown-item>
+                <el-dropdown-item command="excel">导出为Excel</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <el-button @click="goBack">返回</el-button>
         </div>
       </div>
@@ -55,6 +138,7 @@ const router = useRouter()
 const route = useRoute()
 const filename = ref(route.params.filename)
 const loading = ref(true)
+const activeCollapse = ref([]) // 控制折叠面板的打开状态
 const dataInfo = ref({
   rows: 0,
   columns: 0,
@@ -62,6 +146,24 @@ const dataInfo = ref({
   dtypes: {},
   missing_values: {},
   preview: []
+})
+
+// 数据清洗选项
+const cleanOptions = ref({
+  missingValues: {
+    strategy: 'drop',
+    columns: [],
+    fillValue: ''
+  },
+  outliers: {
+    method: 'zscore',
+    threshold: 3,
+    remove: false
+  },
+  normalize: {
+    method: 'minmax',
+    columns: []
+  }
 })
 
 // 计算缺失值数据
@@ -73,6 +175,16 @@ const missingValuesData = computed(() => {
     count,
     percentage: ((count / dataInfo.value.rows) * 100).toFixed(2) + '%'
   }))
+})
+
+// 计算数值型列
+const numericColumns = computed(() => {
+  if (!dataInfo.value.dtypes) return []
+  
+  return dataInfo.value.column_names.filter(col => {
+    const type = dataInfo.value.dtypes[col] || ''
+    return type.includes('int') || type.includes('float')
+  })
 })
 
 onMounted(() => {
@@ -91,6 +203,17 @@ const fetchPreviewData = () => {
       ElMessage.error('获取数据预览失败: ' + error.message)
       loading.value = false
     })
+}
+
+// 导出数据
+const handleExport = (command) => {
+  // 创建下载链接
+  const downloadUrl = `http://localhost:5000/api/export?filename=${filename.value}&format=${command}`
+  
+  // 打开下载链接
+  window.open(downloadUrl, '_blank')
+  
+  ElMessage.success(`正在导出${command.toUpperCase()}文件`)
 }
 
 const goToAnalyze = () => {
@@ -112,11 +235,13 @@ const goBack = () => {
   margin: 0 auto;
   padding: 20px;
 }
-.info-section, .missing-values-section, .data-preview-section {
+.info-section, .missing-values-section, .clean-options-section, .data-preview-section {
   margin-bottom: 30px;
 }
 .actions {
   margin-top: 30px;
+  display: flex;
+  gap: 10px;
 }
 .loading-container {
   display: flex;

@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import os
 import pandas as pd
@@ -6,6 +6,8 @@ from werkzeug.utils import secure_filename
 import json
 from utils.data_viz import create_line_chart
 from utils.ml_models import linear_regression
+from io import BytesIO
+from utils.data_clean import handle_missing_values, remove_outliers, normalize_data, detect_outliers
 
 app = Flask(__name__)
 CORS(app)  # 允许跨域请求
@@ -227,6 +229,62 @@ def apply_linear_regression():
         }), 200
     except Exception as e:
         return jsonify({'error': f'线性回归分析错误: {str(e)}'}), 500
+
+
+# 修改数据导出API，使用query参数而不是JSON体
+@app.route('/api/export', methods=['GET'])
+def export_data():
+    # 获取参数
+    filename = request.args.get('filename')
+    format = request.args.get('format', 'csv')  # 默认导出为CSV
+    
+    # 验证必要参数
+    if not filename:
+        return jsonify({'error': '缺少必要参数'}), 400
+    
+    # 获取文件路径
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    # 判断文件是否存在
+    if not os.path.exists(file_path):
+        return jsonify({'error': '文件不存在'}), 404
+    
+    # 根据文件类型读取数据
+    try:
+        if filename.endswith('.csv'):
+            df = pd.read_csv(file_path)
+        elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+            df = pd.read_excel(file_path)
+        else:
+            return jsonify({'error': '文件格式不支持'}), 400
+    except Exception as e:
+        return jsonify({'error': f'读取文件错误: {str(e)}'}), 500
+    
+    # 准备导出
+    try:
+        output = BytesIO()
+        
+        # 根据请求的格式导出
+        if format.lower() == 'excel' or format.lower() == 'xlsx':
+            df.to_excel(output, index=False)
+            mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            output_filename = f"{os.path.splitext(filename)[0]}_processed.xlsx"
+        else:  # 默认为CSV
+            df.to_csv(output, index=False)
+            mimetype = 'text/csv'
+            output_filename = f"{os.path.splitext(filename)[0]}_processed.csv"
+        
+        output.seek(0)
+        
+        # 返回文件
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=output_filename,
+            mimetype=mimetype
+        )
+    except Exception as e:
+        return jsonify({'error': f'导出文件错误: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
